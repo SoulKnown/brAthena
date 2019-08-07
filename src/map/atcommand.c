@@ -7595,7 +7595,7 @@ ACMD(mapflag) {
 		CHECKFLAG(nojobexp);          CHECKFLAG(nomobloot);          CHECKFLAG(nomvploot);    CHECKFLAG(nightenabled);
 		CHECKFLAG(nodrop);            CHECKFLAG(novending);          CHECKFLAG(loadevent);
 		CHECKFLAG(nochat);            CHECKFLAG(partylock);          CHECKFLAG(guildlock);    CHECKFLAG(src4instance);
-		CHECKFLAG(notomb);            CHECKFLAG(nocashshop);         CHECKFLAG(noviewid);
+		CHECKFLAG(notomb);            CHECKFLAG(nocashshop);         CHECKFLAG(noviewid);	  CHECKFLAG(town);
 		clif->message(sd->fd," ");
 		clif->message(sd->fd,msg_fd(fd,1312)); // Usage: "@mapflag monster_noteleport 1" (0=Off | 1=On)
 		clif->message(sd->fd,msg_fd(fd,1313)); // Type "@mapflag available" to list the available mapflags.
@@ -7632,7 +7632,7 @@ ACMD(mapflag) {
 	SETFLAG(nojobexp);          SETFLAG(nomobloot);          SETFLAG(nomvploot);    SETFLAG(nightenabled);
 	SETFLAG(nodrop);            SETFLAG(novending);          SETFLAG(loadevent);
 	SETFLAG(nochat);            SETFLAG(partylock);          SETFLAG(guildlock);    SETFLAG(src4instance);
-	SETFLAG(notomb);            SETFLAG(nocashshop);         SETFLAG(noviewid);
+	SETFLAG(notomb);            SETFLAG(nocashshop);         SETFLAG(noviewid); 	SETFLAG(town);
 
 	clif->message(sd->fd,msg_fd(fd,1314)); // Invalid flag name or flag.
 	clif->message(sd->fd,msg_fd(fd,1312)); // Usage: "@mapflag monster_noteleport 1" (0=Off | 1=On)
@@ -9452,6 +9452,47 @@ ACMD(reloadcashshop) {
 }
 
 /**
+ * [CarlosHenrq] Faz a solicitação ao char-server para banir o mac_address
+ */
+ACMD(ban_mac)
+{
+	char mac_address[MAC_LENGTH];
+	int minutes = 0;
+
+	// Verifica se foram enviados os dados para banir o mac_address.
+	if(!*message || sscanf(message, "%18s %d", mac_address, &minutes) < 2)
+	{
+		clif->message(fd, msg_fd(fd, 3006));
+		return false;
+	}
+
+	// Faz a solicitação ao char-server para realizar o ban do mac-address
+	chrif->ask_mac_ban(mac_address, minutes);
+	clif->message(fd, msg_fd(fd, 3007));
+	return true;
+}
+
+/**
+ * [CarlosHenrq] Faz a solicitação ao char-server para desbanir o mac_address
+ */
+ACMD(unban_mac)
+{
+	char mac_address[MAC_LENGTH];
+
+	// Verifica se foram enviados os dados para banir o mac_address.
+	if(!*message || sscanf(message, "%18s", mac_address) < 1)
+	{
+		clif->message(fd, msg_fd(fd, 3008));
+		return false;
+	}
+
+	// Faz a solicitação ao char-server para realizar o ban do mac-address
+	chrif->ask_mac_unban(mac_address);
+	clif->message(fd, msg_fd(fd, 3009));
+	return true;
+}
+
+/**
  * Fills the reference of available commands in atcommand DBMap
  **/
 #define ACMD_DEF(x) { #x, atcommand_ ## x, NULL, NULL, NULL, true }
@@ -9725,6 +9766,10 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(bodystyle),
 		ACMD_DEF(reloadcashshop),
 		ACMD_DEF2("costumeitem", item),
+		
+		// [CarlosHenrq] Sistema de ban por mac
+		ACMD_DEF(ban_mac),
+		ACMD_DEF(unban_mac),
 	};
 	int i;
 
